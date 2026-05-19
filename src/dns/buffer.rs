@@ -38,13 +38,24 @@ impl BytePacketBuffer {
     }
 
     /// Change buffer position
-    fn seek(&mut self, pos: usize) {
+    fn seek(&mut self, pos: usize) -> Result<(), BufferParseError> {
+        if pos >= DNS_PACKET_SIZE {
+            return Err(BufferParseError {});
+        }
+
         self.pos = pos;
+
+        Ok(())
     }
 
     /// Step the buffer forward a particular number of Bytes
-    fn step(&mut self, steps: usize) {
+    pub fn step(&mut self, steps: usize) -> Result<(), BufferParseError> {
+        if self.pos + steps  >= DNS_PACKET_SIZE {
+            return Err(BufferParseError {});
+        }
+
         self.pos += steps;
+        Ok(())
     }
 
     /// Get a single Byte, the buffer position is unchanged
@@ -95,5 +106,61 @@ impl BytePacketBuffer {
         Ok(result)
     }
 
-    // fn read_qname(&mut self, outstr: &mut String) -> Result<(), ParseIntError> { ... }
+    pub fn read_qname(&mut self, outstr: &mut String) -> Result<(), BufferParseError> {
+        let mut pos = self.pos();
+        // Track jumps ("compression" for domain names)
+        let mut jumped = false;
+        let max_jumps = 5u8;
+        let mut jump_count = 0u8;
+
+        let mut delim = "";
+
+        loop {
+            if jump_count > max_jumps {
+                return Err(BufferParseError {});
+            }
+
+            let len = self.peek(pos)?;
+            // Two most-significant bits set indicate jump to some offset in the packet
+            if (len & 0xC0) == 0xC0 {
+                // Skip current label
+                if !jumped {
+                    self.seek(pos + 2)?;
+                }
+
+                // Calculate offset and jump
+                let byte2 = self.peek(pos + 1)? as u16;
+                let offset = (((len as u16) ^ 0xC0) << 8) | byte2;
+                pos = offset as usize;
+
+                jumped = true;
+                jump_count += 1;
+
+                continue;
+            }
+            else {
+                pos += 1;
+
+                // Empty label of length 0 terminates domain name
+                if len == 0 {
+                    break;
+                }
+
+                // Append ASCII bytes ".<DOMAIN_PART>"
+                outstr.push_str(delim);
+                let str_buffer = self.get_range(pos, len as usize)?;
+                outstr.push_str(&String::from_utf8_lossy(str_buffer).to_lowercase());
+
+                delim = ".";
+
+                pos += len as usize;
+            }
+        }
+
+        if !jumped {
+            self.seek(pos)?;
+        }
+
+        Ok(())
+    }
 }

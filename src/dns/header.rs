@@ -1,12 +1,15 @@
 
 use modular_bitfield::prelude::*;
 //
-use crate::dns::buffer::{BytePacketBuffer, BufferParseError};
+use crate::dns::buffer::{
+    BytePacketBuffer,
+    BufferParseError
+};
 
 
 //
 /// DNS Request Result Code.
-#[derive(Specifier)]
+#[derive(Specifier, Debug)]
 #[bits = 4]
 pub enum ResultCode {
     NoErr,
@@ -34,6 +37,7 @@ impl ResultCode {
 //
 /// DNS Header Control Flags Representation.
 #[bitfield(bits = 16)]
+#[derive(Clone, Debug)]
 pub struct DnsControlFlags {
     // Byte 1
     pub rec_des:        B1,
@@ -80,6 +84,7 @@ impl DnsControlFlags {
 
 //
 /// DNS Header implementation.
+#[derive(Clone, Debug)]
 pub struct DnsHeader {
     pub id:                 u16,
     pub control_flags:      DnsControlFlags,

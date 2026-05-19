@@ -1,10 +1,13 @@
 
-use crate::dns::buffer::{BytePacketBuffer, BufferParseError};
+use crate::dns::buffer::{
+    BytePacketBuffer,
+    BufferParseError
+};
 
 
 //
 /// DNS query type representation.
-#[derive(PartialEq, Eq, Debug, Clone, Hash, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash, Copy)]
 pub enum QueryType {
     UNKNOWN(u16),
     A, // 1
@@ -36,12 +39,21 @@ pub struct DnsQuestion {
 }
 
 impl DnsQuestion {
-    pub fn new(name: String, qtype: QueryType) -> DnsQuestion {
-        DnsQuestion { name: name, qtype: qtype }
+    pub fn new() -> DnsQuestion {
+        DnsQuestion { name: String::new(), qtype: QueryType::UNKNOWN(0) }
     }
 
-    pub fn read(&mut self, buffer: &mut BytePacketBuffer) -> Result<(), BufferParseError> {
-        /// @todo implement
-        Ok(())
+    pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsQuestion, BufferParseError> {
+        let mut name = String::new();
+        buffer.read_qname(&mut name)?;
+
+        let qtype = QueryType::from_num(buffer.read_u16()?);
+
+        let _ = buffer.read_u16()?; // class
+
+        Ok(DnsQuestion {
+            name: name,
+            qtype: qtype,
+        })
     }
 }
