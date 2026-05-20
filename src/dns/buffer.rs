@@ -1,10 +1,11 @@
+/// Implementation of DNS packet buffer structure and support entities.
 
+// includes
 use std::fmt;
-//
+
 use crate::dns::constants::DNS_PACKET_SIZE;
 
 
-//
 /// DNS Packet Buffer parsing error.
 #[derive(Debug, Clone)]
 pub struct BufferParseError;
@@ -16,15 +17,16 @@ impl fmt::Display for BufferParseError {
 }
 
 
-//
 /// DNS Packet buffer implementation.
 pub struct BytePacketBuffer {
+    /// Container.
     pub buff: [u8; DNS_PACKET_SIZE],
+    /// Current parsing position.
     pub pos:  usize,
 }
 
 impl BytePacketBuffer {
-    /// Constructor
+    /// Default constructor.
     pub fn new() -> BytePacketBuffer {
         BytePacketBuffer {
             buff: [0; DNS_PACKET_SIZE],
@@ -32,12 +34,12 @@ impl BytePacketBuffer {
         }
     }
 
-    /// Get current buffer position
+    /// Gets buffer current parsing position.
     fn pos(&self) -> usize {
         self.pos
     }
 
-    /// Change buffer position
+    /// Change (with check) buffer current parsing position to provided value.
     fn seek(&mut self, pos: usize) -> Result<(), BufferParseError> {
         if pos >= DNS_PACKET_SIZE {
             return Err(BufferParseError {});
@@ -48,7 +50,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
-    /// Step the buffer forward a particular number of Bytes
+    /// Step (with check) the buffer current parsing position forward a provided number of Bytes.
     pub fn step(&mut self, steps: usize) -> Result<(), BufferParseError> {
         if self.pos + steps  >= DNS_PACKET_SIZE {
             return Err(BufferParseError {});
@@ -58,7 +60,8 @@ impl BytePacketBuffer {
         Ok(())
     }
 
-    /// Get a single Byte, the buffer position is unchanged
+    /// Get a single Byte on a provided position (with check), the buffer current parsing position
+    /// is unchanged.
     fn peek(&mut self, pos: usize) -> Result<u8, BufferParseError> {
         if pos >= DNS_PACKET_SIZE {
             return Err(BufferParseError {});
@@ -67,7 +70,8 @@ impl BytePacketBuffer {
         Ok(self.buff[pos])
     }
 
-    /// Get a range of Bytes, the buffer position is unchanged
+    /// Get a range of Bytes from a provided start position (with check), the buffer current
+    /// parsing position is unchanged.
     fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8], BufferParseError> {
         if start + len >= DNS_PACKET_SIZE {
             return Err(BufferParseError {});
@@ -76,7 +80,7 @@ impl BytePacketBuffer {
         Ok(&self.buff[start..start + len as usize])
     }
 
-    /// Read single Byte and increment 
+    /// Read a single Byte (with check) and increment current parsing position. 
     pub fn read_u8(&mut self) -> Result<u8, BufferParseError> {
         if self.pos >= DNS_PACKET_SIZE {
             return Err(BufferParseError {});
@@ -88,7 +92,7 @@ impl BytePacketBuffer {
         Ok(result)
     }
 
-    /// Read two Bytes and increment 
+    /// Read two Bytes (with check) and increment current parsing position. 
     pub fn read_u16(&mut self) -> Result<u16, BufferParseError> {
         let result = ((self.read_u8()? as u16) << 8)
             | (self.read_u8()? as u16);
@@ -96,7 +100,7 @@ impl BytePacketBuffer {
         Ok(result)
     }
 
-    /// Read four Bytes and increment
+    /// Read four Bytes (with check) and increment current parsing position.
     pub fn read_u32(&mut self) -> Result<u32, BufferParseError> {
         let result = ((self.read_u8()? as u32) << 24)
             | ((self.read_u8()? as u32) << 16)
@@ -106,6 +110,7 @@ impl BytePacketBuffer {
         Ok(result)
     }
 
+    /// Read domain name and increment current parsing position.
     pub fn read_qname(&mut self, outstr: &mut String) -> Result<(), BufferParseError> {
         let mut pos = self.pos();
         // Track jumps ("compression" for domain names)
