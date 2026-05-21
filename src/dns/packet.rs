@@ -2,8 +2,8 @@
 //
 use crate::dns::{
     buffer::{
-        BufferParseError,
-        BytePacketBuffer
+        BytePacketBuffer,
+        Result
     },
     header::DnsHeader,
     question::DnsQuestion,
@@ -33,7 +33,7 @@ impl DnsPacket {
     }
 
     ///
-    pub fn from_buffer(buffer: &mut BytePacketBuffer) -> Result<DnsPacket, BufferParseError> {
+    pub fn from_buffer(buffer: &mut BytePacketBuffer) -> Result<DnsPacket> {
         let mut result = DnsPacket::new();
 
         result.header.read(buffer)?;

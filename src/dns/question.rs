@@ -1,7 +1,7 @@
 
 use crate::dns::buffer::{
     BytePacketBuffer,
-    BufferParseError
+    Result
 };
 
 
@@ -43,7 +43,7 @@ impl DnsQuestion {
         DnsQuestion { name: String::new(), qtype: QueryType::UNKNOWN(0) }
     }
 
-    pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsQuestion, BufferParseError> {
+    pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsQuestion> {
         let mut name = String::new();
         buffer.read_qname(&mut name)?;
 

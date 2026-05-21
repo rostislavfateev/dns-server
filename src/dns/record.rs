@@ -3,8 +3,8 @@ use std::net::Ipv4Addr;
 //
 use crate::dns::{
     buffer::{
-        BufferParseError,
-        BytePacketBuffer
+        BytePacketBuffer,
+        Result
     },
     question::QueryType
 };
@@ -28,7 +28,7 @@ pub enum DnsRecord {
 }
 
 impl DnsRecord {
-    pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsRecord, BufferParseError> {
+    pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsRecord> {
         let mut domain = String::new();
         buffer.read_qname(&mut domain)?;
         

@@ -5,7 +5,7 @@ use modular_bitfield::prelude::*;
 
 use crate::dns::buffer::{
     BytePacketBuffer,
-    BufferParseError
+    Result
 };
 
 

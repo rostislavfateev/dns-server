@@ -1,20 +1,11 @@
 /// Implementation of DNS packet buffer structure and support entities.
 
 // includes
-use std::fmt;
-
 use crate::dns::constants::DNS_PACKET_SIZE;
 
 
-/// DNS Packet Buffer parsing error.
-#[derive(Debug, Clone)]
-pub struct BufferParseError;
-
-impl fmt::Display for BufferParseError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Buffer overflow detected!")
-    }
-}
+/// "Custom exception" for DNS Packet Buffer parsing.
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 
 /// DNS Packet buffer implementation.
@@ -40,9 +31,9 @@ impl BytePacketBuffer {
     }
 
     /// Change (with check) buffer current parsing position to provided value.
-    fn seek(&mut self, pos: usize) -> Result<(), BufferParseError> {
+    fn seek(&mut self, pos: usize) -> Result<()> {
         if pos >= DNS_PACKET_SIZE {
-            return Err(BufferParseError {});
+            return Err("Buffer overflow detected!".into());
         }
 
         self.pos = pos;
@@ -51,9 +42,9 @@ impl BytePacketBuffer {
     }
 
     /// Step (with check) the buffer current parsing position forward a provided number of Bytes.
-    pub fn step(&mut self, steps: usize) -> Result<(), BufferParseError> {
+    pub fn step(&mut self, steps: usize) -> Result<()> {
         if self.pos + steps  >= DNS_PACKET_SIZE {
-            return Err(BufferParseError {});
+            return Err("Buffer overflow detected!".into());
         }
 
         self.pos += steps;
@@ -62,9 +53,9 @@ impl BytePacketBuffer {
 
     /// Get a single Byte on a provided position (with check), the buffer current parsing position
     /// is unchanged.
-    fn peek(&mut self, pos: usize) -> Result<u8, BufferParseError> {
+    fn peek(&mut self, pos: usize) -> Result<u8> {
         if pos >= DNS_PACKET_SIZE {
-            return Err(BufferParseError {});
+            return Err("Buffer overflow detected!".into());
         }
 
         Ok(self.buff[pos])
@@ -72,18 +63,18 @@ impl BytePacketBuffer {
 
     /// Get a range of Bytes from a provided start position (with check), the buffer current
     /// parsing position is unchanged.
-    fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8], BufferParseError> {
+    fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
         if start + len >= DNS_PACKET_SIZE {
-            return Err(BufferParseError {});
+            return Err("Buffer overflow detected!".into());
         }
 
         Ok(&self.buff[start..start + len as usize])
     }
 
     /// Read a single Byte (with check) and increment current parsing position. 
-    pub fn read_u8(&mut self) -> Result<u8, BufferParseError> {
+    pub fn read_u8(&mut self) -> Result<u8> {
         if self.pos >= DNS_PACKET_SIZE {
-            return Err(BufferParseError {});
+            return Err("Buffer overflow detected!".into());
         }
 
         let result = self.buff[self.pos];
@@ -93,7 +84,7 @@ impl BytePacketBuffer {
     }
 
     /// Read two Bytes (with check) and increment current parsing position. 
-    pub fn read_u16(&mut self) -> Result<u16, BufferParseError> {
+    pub fn read_u16(&mut self) -> Result<u16> {
         let result = ((self.read_u8()? as u16) << 8)
             | (self.read_u8()? as u16);
 
@@ -101,7 +92,7 @@ impl BytePacketBuffer {
     }
 
     /// Read four Bytes (with check) and increment current parsing position.
-    pub fn read_u32(&mut self) -> Result<u32, BufferParseError> {
+    pub fn read_u32(&mut self) -> Result<u32> {
         let result = ((self.read_u8()? as u32) << 24)
             | ((self.read_u8()? as u32) << 16)
             | ((self.read_u8()? as u32) << 8)
@@ -111,7 +102,7 @@ impl BytePacketBuffer {
     }
 
     /// Read domain name and increment current parsing position.
-    pub fn read_qname(&mut self, outstr: &mut String) -> Result<(), BufferParseError> {
+    pub fn read_qname(&mut self, outstr: &mut String) -> Result<()> {
         let mut pos = self.pos();
         // Track jumps ("compression" for domain names)
         let mut jumped = false;
@@ -122,7 +113,7 @@ impl BytePacketBuffer {
 
         loop {
             if jump_count > max_jumps {
-                return Err(BufferParseError {});
+                return Err("Maximum number of jumps exceeded!".into());
             }
 
             let len = self.peek(pos)?;
