@@ -1,5 +1,8 @@
 
-use std::net::Ipv4Addr;
+use std::net::{
+    Ipv4Addr,
+    Ipv6Addr
+};
 //
 use crate::dns::{
     buffer::{
@@ -20,9 +23,30 @@ pub enum DnsRecord {
         data_len:   u16,
         ttl:        u32,
     },
-    A {
+    ALIAS {
         domain:     String,
         addr:       Ipv4Addr,
+        ttl:        u32,
+    },
+    NAMESERVER {
+        domain:     String,
+        host:       String,
+        ttl:        u32,
+    },
+    CANONICALNAME {
+        domain:     String,
+        host:       String,
+        ttl:        u32,
+    },
+    MAILEXCHANGE {
+        domain:     String,
+        priority:   u16,
+        host:       String,
+        ttl:        u32,
+    },
+    AAAA {
+        domain:     String,
+        addr:       Ipv6Addr,
         ttl:        u32,
     },
 }
@@ -39,19 +63,73 @@ impl DnsRecord {
         let data_len = buffer.read_u16()?;
 
         match qtype {
-            QueryType::A => {
+            QueryType::ALIAS => {
                 let ip_u32 = buffer.read_u32()?;
                 let addr = Ipv4Addr::new(
                     ((ip_u32 >> 24) & 0xFF) as u8,
                     ((ip_u32 >> 16) & 0xFF) as u8,
-                    ((ip_u32 >> 8) & 0xFF) as u8,
-                    (ip_u32 & 0xFF) as u8,
+                    ((ip_u32 >> 8)  & 0xFF) as u8,
+                    (ip_u32         & 0xFF) as u8,
                 );
 
-                Ok(DnsRecord::A {
+                Ok(DnsRecord::ALIAS {
                     domain: domain,
-                    addr: addr,
-                    ttl: ttl,
+                    addr:   addr,
+                    ttl:    ttl,
+                })
+            },
+            QueryType::NAMESERVER => {
+                let mut host = String::new();
+                buffer.read_qname(&mut host)?;
+
+                Ok(DnsRecord::NAMESERVER {
+                    domain: domain,
+                    host:   host,
+                    ttl:    ttl })
+            },
+            QueryType::CANONICALNAME => {
+                let mut host = String::new();
+                buffer.read_qname(&mut host)?;
+
+                Ok(DnsRecord::CANONICALNAME {
+                    domain: domain,
+                    host:   host,
+                    ttl:    ttl
+                })
+            },
+            QueryType::MAILEXCHANGE => {
+                let priority = buffer.read_u16()?;
+                let mut host = String::new();
+                buffer.read_qname(&mut host)?;
+
+                Ok(DnsRecord::MAILEXCHANGE {
+                    domain:     domain,
+                    priority:   priority,
+                    host:       host,
+                    ttl:        ttl
+                })
+            },
+            QueryType::AAAA => {
+                let mut raw_addr = [0u32; 4];
+                for rw in raw_addr.iter_mut() {
+                    *rw = buffer.read_u32()?;
+                }
+
+                let addr = Ipv6Addr::new(
+                    ((raw_addr[0] >> 16) & 0xFFFF) as u16,
+                    (raw_addr[0]         & 0xFFFF) as u16,
+                    ((raw_addr[1] >> 16) & 0xFFFF) as u16,
+                    (raw_addr[1]         & 0xFFFF) as u16,
+                    ((raw_addr[2] >> 16) & 0xFFFF) as u16,
+                    (raw_addr[2]         & 0xFFFF) as u16,
+                    ((raw_addr[3] >> 16) & 0xFFFF) as u16,
+                    (raw_addr[3]         & 0xFFFF) as u16,
+                );
+
+                Ok(DnsRecord::AAAA {
+                    domain: domain,
+                    addr:   addr,
+                    ttl:    ttl
                 })
             },
             QueryType::UNKNOWN(_) => {

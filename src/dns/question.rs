@@ -10,21 +10,33 @@ use crate::dns::buffer::{
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash, Copy)]
 pub enum QueryType {
     UNKNOWN(u16),
-    A, // 1
+    ALIAS,
+    NAMESERVER,
+    CANONICALNAME,
+    MAILEXCHANGE,
+    AAAA, // IPv6 alias
 }
 
 impl QueryType {
     pub fn to_num(&self) -> u16 {
         match *self {
             QueryType::UNKNOWN(x) => x,
-            QueryType::A => 1,
+            QueryType::ALIAS            => 1,
+            QueryType::NAMESERVER       => 2,
+            QueryType::CANONICALNAME    => 5,
+            QueryType::MAILEXCHANGE     => 15,
+            QueryType::AAAA             => 28,
         }
     }
 
     pub fn from_num(num: u16) -> QueryType {
         match num {
-            1 => QueryType::A,
-            _ => QueryType::UNKNOWN(num),
+            1  => QueryType::ALIAS,
+            2  => QueryType::NAMESERVER,
+            5  => QueryType::CANONICALNAME,
+            15 => QueryType::MAILEXCHANGE,
+            28 => QueryType::AAAA,
+            _  => QueryType::UNKNOWN(num),
         }
     }
 }
@@ -34,13 +46,16 @@ impl QueryType {
 /// DNS Question implementation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DnsQuestion {
-    pub name: String,
-    pub qtype: QueryType,
+    pub name:   String,
+    pub qtype:  QueryType,
 }
 
 impl DnsQuestion {
-    pub fn new() -> DnsQuestion {
-        DnsQuestion { name: String::new(), qtype: QueryType::UNKNOWN(0) }
+    pub fn new(name: String, qtype: QueryType) -> DnsQuestion {
+        DnsQuestion {
+            name:   name,
+            qtype:  qtype
+        }
     }
 
     pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsQuestion> {
@@ -52,8 +67,8 @@ impl DnsQuestion {
         let _ = buffer.read_u16()?; // class
 
         Ok(DnsQuestion {
-            name: name,
-            qtype: qtype,
+            name:   name,
+            qtype:  qtype,
         })
     }
 
