@@ -1,8 +1,6 @@
 /// Implementation of DNS header struct and support entities.
 
 // includes
-use modular_bitfield::prelude::*;
-
 use crate::dns::buffer::{
     BytePacketBuffer,
     Result
@@ -10,10 +8,9 @@ use crate::dns::buffer::{
 
 
 /// DNS Request Result Code.
-#[derive(Specifier, Debug)]
-#[bits = 4]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ResultCode {
-    NoErr,
+    NoErr = 0,
     FormErr,
     ServFail,
     NxDomain,
@@ -37,48 +34,61 @@ impl ResultCode {
 
 
 /// DNS Header Control Flags Representation.
-#[bitfield(bits = 16)]
 #[derive(Clone, Debug)]
 pub struct DnsControlFlags {
     // Byte 1
     /// Request recursion hint to server.
-    pub recursion_desired:      B1,
+    pub recursion_desired:      bool,
     /// DNS packet length is larger than standard (512).
-    pub truncated_message:      B1,
+    pub truncated_message:      bool,
     /// Server ownership of requested domain.
-    pub authoritative_answer:   B1,
+    pub authoritative_answer:   bool,
     /// Operation code (typically 0).
-    pub operation_code:         B4,
+    pub operation_code:         u8,
     /// Packet is a Query (0) or Response (1).
-    pub query_response:         B1,
+    pub query_response:         bool,
+
     // Byte 2
     /// Server status of the response.
-    #[bits = 4]
-    pub response_code:          ResultCode,
+    pub result_code:            ResultCode,
     /// ???
-    pub check_disable:          B1,
+    pub check_disable:          bool,
     /// ???
-    pub authoritative_data:     B1,
-    #[skip]
+    pub authoritative_data:     bool,
     /// Reserved.
-    pub z:                      B1,
+    pub z:                      bool,
     /// Server indicator if recursion is allowed.
-    pub recursion_available:    B1,
+    pub recursion_available:    bool,
 }
 
 impl DnsControlFlags {
+
+    pub fn new() -> DnsControlFlags {
+        DnsControlFlags {
+            recursion_desired:      false,
+            truncated_message:      false,
+            authoritative_answer:   false,
+            operation_code:         0,
+            query_response:         false,
+            result_code:            ResultCode::NoErr,
+            check_disable:          false,
+            authoritative_data:     false,
+            z:                      false,
+            recursion_available:    false
+        }
+    }
     /// Read control flags out of DNS packet buffer.
-    pub fn read(&mut self, buffer: &mut BytePacketBuffer) -> Result<(), BufferParseError> {
+    pub fn read(&mut self, buffer: &mut BytePacketBuffer) -> Result<()> {
         let flag_byte1 = buffer.read_u8()?;
         let flag_byte2 = buffer.read_u8()?;
 
         // bit:       0                  1                     2                 3 4 5 6            7
         //   [recursion_desired | truncated_message | authoritative_answer | operation_code | query_response]
-        self.set_recursion_desired(flag_byte1 & 1);
-        self.set_truncated_message(flag_byte1 & (1 << 1));
-        self.set_authoritative_answer(flag_byte1 & (1 << 2));
-        self.set_operation_code((flag_byte1 >> 3) & 0x0F);
-        self.set_query_response(flag_byte1 & (1 << 7));
+        self.recursion_desired      = (flag_byte1 & 1) > 0;
+        self.truncated_message      = (flag_byte1 & (1 << 1)) > 0;
+        self.authoritative_answer   = (flag_byte1 & (1 << 2)) > 0;
+        self.operation_code         = (flag_byte1 >> 3) & 0x0F;
+        self.query_response         = (flag_byte1 & (1 << 7)) > 0;
 
         // bit:   0 1 2 3          4                  5            6           7
         //   [response_code | check_disable | authoritative_data | z | recursion_available]
@@ -114,15 +124,8 @@ impl DnsHeader {
     /// Default constructor.
     pub fn new() -> DnsHeader {
         DnsHeader {
-            id: 0, // make it random
-            control_flags: DnsControlFlags::new()
-                .with_query_response(0)
-                .with_operation_code(0)
-                .with_authoritative_answer(0)
-                .with_truncated_message(0)
-                .with_recursion_desired(0)
-                .with_recursion_available(0)
-                .with_response_code(ResultCode::NoErr),
+            id:                 0,
+            control_flags:      DnsControlFlags::new(),
             question_count:     0,
             answer_count:       0,
             authority_count:    0,
@@ -131,7 +134,7 @@ impl DnsHeader {
     }
 
     /// Read data from DNS packet buffer.
-    pub fn read(&mut self, buffer: &mut BytePacketBuffer) -> Result<(), BufferParseError> {
+    pub fn read(&mut self, buffer: &mut BytePacketBuffer) -> Result<()> {
         self.id = buffer.read_u16()?;
         self.control_flags.read(buffer)?;
         self.question_count     = buffer.read_u16()?;
