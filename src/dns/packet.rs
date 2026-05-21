@@ -24,11 +24,11 @@ impl DnsPacket {
 
     pub fn new() -> DnsPacket {
         DnsPacket {
-            header: DnsHeader::new(),
-            questions: Vec::new(),
-            answers: Vec::new(),
-            authorities: Vec::new(),
-            resources: Vec::new()
+            header:         DnsHeader::new(),
+            questions:      Vec::new(),
+            answers:        Vec::new(),
+            authorities:    Vec::new(),
+            resources:      Vec::new()
         }
     }
 
@@ -56,6 +56,29 @@ impl DnsPacket {
         }
 
         Ok(result)
+    }
+
+    pub fn to_buffer(&mut self, buffer: &mut BytePacketBuffer) -> Result<()> {
+        self.header.question_count      = self.questions.len()      as u16;
+        self.header.answer_count        = self.answers.len()        as u16;
+        self.header.authority_count     = self.authorities.len()    as u16;
+        self.header.additional_count    = self.resources.len()      as u16;
+        self.header.write(buffer)?;
+
+        for question in &self.questions {
+            question.write(buffer)?;
+        }
+        for answer in &self.answers {
+            answer.write(buffer)?;
+        }
+        for authority in &self.authorities {
+            authority.write(buffer)?;
+        }
+        for resource in &self.resources {
+            resource.write(buffer)?;
+        }
+
+        Ok(())
     }
 
 }

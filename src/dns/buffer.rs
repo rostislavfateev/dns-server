@@ -26,7 +26,7 @@ impl BytePacketBuffer {
     }
 
     /// Gets buffer current parsing position.
-    fn pos(&self) -> usize {
+    pub fn pos(&self) -> usize {
         self.pos
     }
 
@@ -159,4 +159,52 @@ impl BytePacketBuffer {
 
         Ok(())
     }
+
+
+    pub fn write_u8(&mut self, val: u8) -> Result<()> {
+        if self.pos >= DNS_PACKET_SIZE {
+            return Err("Buffer overflow detected!".into());
+        }
+
+        self.buff[self.pos] = val;
+        self.pos += 1;
+
+        Ok(())
+    }
+
+    pub fn write_u16(&mut self, val: u16) -> Result<()> {
+        self.write_u8(((val >> 8) & 0xFF) as u8)?;
+        self.write_u8((val & 0xFF) as u8)?;
+
+        Ok(())
+    }
+
+    pub fn write_u32(&mut self, val: u32) -> Result<()> {
+        self.write_u8(((val >> 24) & 0xFF) as u8)?;
+        self.write_u8(((val >> 16) & 0xFF) as u8)?;
+        self.write_u8(((val >> 8) & 0xFF) as u8)?;
+        self.write_u8((val & 0xFF) as u8)?;
+
+        Ok(())
+    }
+
+    pub fn write_qname(&mut self, qname: &str) -> Result<()> {
+        for label in qname.split('.') {
+            if label.len() > 0x3F {
+                // @todo different exception - label length exceeded.
+                return Err("Maximum label length exceeded!".into()); 
+            }
+
+            self.write_u8(label.len() as u8)?;
+            for byte in label.as_bytes() {
+                self.write_u8(*byte)?;
+            }
+        }
+
+        // Label ending.
+        self.write_u8(0u8)?;
+
+        Ok(())
+    }
 }
+

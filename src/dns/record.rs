@@ -58,11 +58,39 @@ impl DnsRecord {
                 buffer.step(data_len as usize)?;
 
                 Ok(DnsRecord::UNKNOWN {
-                    domain: domain,
-                    qtype: qtype,
-                    data_len: data_len,
-                    ttl: ttl })
+                    domain:     domain,
+                    qtype:      qtype,
+                    data_len:   data_len,
+                    ttl:        ttl
+                })
+            }
+        }
+    }
+
+    pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<usize> {
+        let start_pos = buffer.pos();
+
+        match *self {
+            DnsRecord::ALIAS {
+                ref domain,
+                ref addr,
+                ttl } => {
+                    buffer.write_qname(domain)?;
+                    buffer.write_u16(QueryType::A.to_num())?;
+                    buffer.write_u16(1u16)?;
+                    buffer.write_u32(ttl)?;
+                    buffer.write_u16(4u16)?;
+
+                    let octets = addr.octets();
+                    for i in 0..octets.len() {
+                        buffer.write_u8(octets[i])?;
             }
         }
     }
 }
+
+
+        Ok(buffer.pos() - start_pos)
+    }
+}
+

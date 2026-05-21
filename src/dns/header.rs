@@ -90,13 +90,33 @@ impl DnsControlFlags {
         self.operation_code         = (flag_byte1 >> 3) & 0x0F;
         self.query_response         = (flag_byte1 & (1 << 7)) > 0;
 
-        // bit:   0 1 2 3          4                  5            6           7
-        //   [response_code | check_disable | authoritative_data | z | recursion_available]
-        self.set_response_code(ResultCode::from_num(flag_byte2 & 0x0F));
-        self.set_check_disable(flag_byte2 & (1 << 4));
-        self.set_authoritative_data(flag_byte2 & (1 << 5));
-        //self.set_z(flag_byte2 & (1 << 6));
-        self.set_recursion_available(flag_byte2 & (1 << 7));
+        // bit: 0 1 2 3          4                  5            6           7
+        //   [result_code | check_disable | authoritative_data | z | recursion_available]
+        self.result_code            = ResultCode::from_num(flag_byte2 & 0x0F);
+        self.check_disable          = (flag_byte2 & (1 << 4)) > 0;
+        self.authoritative_data     = (flag_byte2 & (1 << 5)) > 0;
+        //self.z                    = (flag_byte2 & (1 << 6)) > 0;
+        self.recursion_available    = (flag_byte2 & (1 << 7)) > 0;
+
+        Ok(())
+    }
+
+    pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<()> {
+        buffer.write_u8(
+            (self.recursion_desired as u8)
+            | ((self.truncated_message      as u8) << 1)
+            | ((self.authoritative_answer   as u8) << 2)
+            | ((self.operation_code         as u8) << 3)
+            | ((self.query_response         as u8) << 7)
+        )?;
+        buffer.write_u8(
+            (self.result_code as u8)
+            | ((self.check_disable          as u8) << 4)
+            | ((self.authoritative_data     as u8) << 5)
+            | ((0u8)                               << 6)
+            | ((self.recursion_available    as u8) << 7)
+        )?;
+
 
         Ok(())
     }
@@ -141,6 +161,17 @@ impl DnsHeader {
         self.answer_count       = buffer.read_u16()?;
         self.authority_count    = buffer.read_u16()?;
         self.additional_count   = buffer.read_u16()?;
+
+        Ok(())
+    }
+
+    pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<()> {
+        buffer.write_u16(self.id)?;
+        self.control_flags.write(buffer)?;
+        buffer.write_u16(self.question_count)?;
+        buffer.write_u16(self.answer_count)?;
+        buffer.write_u16(self.authority_count)?;
+        buffer.write_u16(self.additional_count)?;
 
         Ok(())
     }

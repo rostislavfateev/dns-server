@@ -56,4 +56,12 @@ impl DnsQuestion {
             qtype: qtype,
         })
     }
+
+    pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<()> {
+        buffer.write_qname(&self.name)?;
+        buffer.write_u16(self.qtype.to_num())?;
+        buffer.write_u16(1u16)?;
+
+        Ok(())
+    }
 }
