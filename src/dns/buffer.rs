@@ -71,6 +71,23 @@ impl BytePacketBuffer {
         Ok(&self.buff[start..start + len as usize])
     }
 
+    pub fn set(&mut self, pos: usize, val: u8) -> Result<()> {
+        if pos >= DNS_PACKET_SIZE {
+            return Err("Buffer overflow detected!".into());
+        }
+
+        self.buff[pos] = val;
+
+        Ok(())
+    }
+
+    pub fn set_u16(&mut self, pos: usize, val: u16) -> Result<()> {
+        self.set(pos, (val >> 8) as u8)?;
+        self.set(pos + 1, (val & 0xFF) as u8)?;
+
+        Ok(())
+    }
+
     /// Read a single Byte (with check) and increment current parsing position. 
     pub fn read_u8(&mut self) -> Result<u8> {
         if self.pos >= DNS_PACKET_SIZE {
