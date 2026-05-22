@@ -1,4 +1,6 @@
+/// Implementation of generic DNS Record and supporting entities.
 
+// includes
 use std::net::{
     Ipv4Addr,
     Ipv6Addr
@@ -13,37 +15,42 @@ use crate::dns::{
 };
 
 
-//
 /// DNS Record implementation.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum DnsRecord {
+    /// Generic unknown record type.
     UNKNOWN {
         domain:     String,
         qtype:      QueryType,
         data_len:   u16,
         ttl:        u32,
     },
+    /// IPv4 <-> Name record type.
     ALIAS {
         domain:     String,
         addr:       Ipv4Addr,
         ttl:        u32,
     },
+    /// DNS Server of a domain record type.
     NAMESERVER {
         domain:     String,
         host:       String,
         ttl:        u32,
     },
+    /// Name <-> Name record type.
     CANONICALNAME {
         domain:     String,
         host:       String,
         ttl:        u32,
     },
+    /// Domain mail host record type.
     MAILEXCHANGE {
         domain:     String,
         priority:   u16,
         host:       String,
         ttl:        u32,
     },
+    /// IPv6 <-> Name record type.
     AAAA {
         domain:     String,
         addr:       Ipv6Addr,
@@ -52,6 +59,7 @@ pub enum DnsRecord {
 }
 
 impl DnsRecord {
+    /// Read DNS record from byte buffer.
     pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsRecord> {
         let mut domain = String::new();
         buffer.read_qname(&mut domain)?;
@@ -145,6 +153,7 @@ impl DnsRecord {
         }
     }
 
+    /// Write DNS record to byte buffer.
     pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<usize> {
         let start_pos = buffer.pos();
 

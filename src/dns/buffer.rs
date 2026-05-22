@@ -71,6 +71,7 @@ impl BytePacketBuffer {
         Ok(&self.buff[start..start + len as usize])
     }
 
+    /// Sets buffer value at specified position (with check).
     pub fn set(&mut self, pos: usize, val: u8) -> Result<()> {
         if pos >= DNS_PACKET_SIZE {
             return Err("Buffer overflow detected!".into());
@@ -81,6 +82,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
+    /// Sets 2 Byte buffer value at specified position (with check).
     pub fn set_u16(&mut self, pos: usize, val: u16) -> Result<()> {
         self.set(pos, (val >> 8) as u8)?;
         self.set(pos + 1, (val & 0xFF) as u8)?;
@@ -88,7 +90,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
-    /// Read a single Byte (with check) and increment current parsing position. 
+    /// Read a single Byte (with check) and increment current parsing position.
     pub fn read_u8(&mut self) -> Result<u8> {
         if self.pos >= DNS_PACKET_SIZE {
             return Err("Buffer overflow detected!".into());
@@ -100,7 +102,7 @@ impl BytePacketBuffer {
         Ok(result)
     }
 
-    /// Read two Bytes (with check) and increment current parsing position. 
+    /// Read two Bytes (with check) and increment current parsing position.
     pub fn read_u16(&mut self) -> Result<u16> {
         let result = ((self.read_u8()? as u16) << 8)
             | (self.read_u8()? as u16);
@@ -177,7 +179,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
-
+    /// Write a single Byte (with check) and increment current parsing position.
     pub fn write_u8(&mut self, val: u8) -> Result<()> {
         if self.pos >= DNS_PACKET_SIZE {
             return Err("Buffer overflow detected!".into());
@@ -189,6 +191,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
+    /// Write two Bytes (with check) and increment current parsing position.
     pub fn write_u16(&mut self, val: u16) -> Result<()> {
         self.write_u8(((val >> 8) & 0xFF) as u8)?;
         self.write_u8((val & 0xFF) as u8)?;
@@ -196,6 +199,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
+    /// Write four Bytes (with check) and increment current parsing position.
     pub fn write_u32(&mut self, val: u32) -> Result<()> {
         self.write_u8(((val >> 24) & 0xFF) as u8)?;
         self.write_u8(((val >> 16) & 0xFF) as u8)?;
@@ -205,6 +209,7 @@ impl BytePacketBuffer {
         Ok(())
     }
 
+    /// Write domain name and increment current parsing position.
     pub fn write_qname(&mut self, qname: &str) -> Result<()> {
         for label in qname.split('.') {
             if label.len() > 0x3F {

@@ -1,23 +1,31 @@
+/// Implementation of DNS Question record and support entities.
 
+// includes
 use crate::dns::buffer::{
     BytePacketBuffer,
     Result
 };
 
 
-//
 /// DNS query type representation.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Hash, Copy)]
 pub enum QueryType {
+    /// Unknown query type.
     UNKNOWN(u16),
+    /// IPv4 <-> Name mapping
     ALIAS,
+    /// DNS server address for a domain.
     NAMESERVER,
+    /// Name <-> Name mapping.
     CANONICALNAME,
+    /// Host of the mail server for a domain.
     MAILEXCHANGE,
-    AAAA, // IPv6 alias
+    /// IPv6 <-> Name mapping
+    AAAA,
 }
 
 impl QueryType {
+    /// QueryType -> u16 converter.
     pub fn to_num(&self) -> u16 {
         match *self {
             QueryType::UNKNOWN(x) => x,
@@ -29,6 +37,7 @@ impl QueryType {
         }
     }
 
+    /// u16 -> QueryType converter.
     pub fn from_num(num: u16) -> QueryType {
         match num {
             1  => QueryType::ALIAS,
@@ -42,15 +51,17 @@ impl QueryType {
 }
 
 
-//
 /// DNS Question implementation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DnsQuestion {
+    /// Domain name.
     pub name:   String,
+    /// Query type.
     pub qtype:  QueryType,
 }
 
 impl DnsQuestion {
+    /// Default constructor.
     pub fn new(name: String, qtype: QueryType) -> DnsQuestion {
         DnsQuestion {
             name:   name,
@@ -58,6 +69,7 @@ impl DnsQuestion {
         }
     }
 
+    /// Read DNS question record from byte buffer.
     pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsQuestion> {
         let mut name = String::new();
         buffer.read_qname(&mut name)?;
@@ -72,6 +84,7 @@ impl DnsQuestion {
         })
     }
 
+    /// Write Dns question record to byte buffer.
     pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<()> {
         buffer.write_qname(&self.name)?;
         buffer.write_u16(self.qtype.to_num())?;

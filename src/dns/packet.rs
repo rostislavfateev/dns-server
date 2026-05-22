@@ -1,3 +1,4 @@
+/// Implementation of DNS Packet and support entities.
 
 //
 use crate::dns::{
@@ -10,18 +11,23 @@ use crate::dns::{
     record::DnsRecord
 };
 
-
+/// DNS packet implementation.
 #[derive(Clone, Debug)]
 pub struct DnsPacket {
+    /// DNS header.
     pub header:         DnsHeader,
+    /// DNS question records container.
     pub questions:      Vec<DnsQuestion>,
+    /// DNS answers records container.
     pub answers:        Vec<DnsRecord>,
+    /// DNS authorities records container.
     pub authorities:    Vec<DnsRecord>,
+    /// DNS additional records container.
     pub resources:      Vec<DnsRecord>,
 }
 
 impl DnsPacket {
-
+    /// Default constructor.
     pub fn new() -> DnsPacket {
         DnsPacket {
             header:         DnsHeader::new(),
@@ -32,7 +38,7 @@ impl DnsPacket {
         }
     }
 
-    ///
+    /// Read DNS packet from byte buffer.
     pub fn from_buffer(buffer: &mut BytePacketBuffer) -> Result<DnsPacket> {
         let mut result = DnsPacket::new();
 
@@ -58,6 +64,7 @@ impl DnsPacket {
         Ok(result)
     }
 
+    /// Write DNS packet to byte buffer.
     pub fn to_buffer(&mut self, buffer: &mut BytePacketBuffer) -> Result<()> {
         self.header.question_count      = self.questions.len()      as u16;
         self.header.answer_count        = self.answers.len()        as u16;
@@ -80,5 +87,4 @@ impl DnsPacket {
 
         Ok(())
     }
-
 }

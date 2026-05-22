@@ -10,11 +10,17 @@ use crate::dns::buffer::{
 /// DNS Request Result Code.
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ResultCode {
+    /// No error detected.
     NoErr = 0,
+    /// Format error.
     FormErr,
+    /// Server failure.
     ServFail,
+    ///
     NxDomain,
+    /// Not implemented error.
     NotImp,
+    /// Request refused error.
     Refused,
 }
 
@@ -62,7 +68,7 @@ pub struct DnsControlFlags {
 }
 
 impl DnsControlFlags {
-
+    /// Default constructor.
     pub fn new() -> DnsControlFlags {
         DnsControlFlags {
             recursion_desired:      false,
@@ -77,6 +83,7 @@ impl DnsControlFlags {
             recursion_available:    false
         }
     }
+
     /// Read control flags out of DNS packet buffer.
     pub fn read(&mut self, buffer: &mut BytePacketBuffer) -> Result<()> {
         let flag_byte1 = buffer.read_u8()?;
@@ -101,6 +108,7 @@ impl DnsControlFlags {
         Ok(())
     }
 
+    /// Write control flags to DNS packet buffer.
     pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<()> {
         buffer.write_u8(
             (self.recursion_desired as u8)
@@ -165,6 +173,7 @@ impl DnsHeader {
         Ok(())
     }
 
+    /// Write data to DNS packet buffer.
     pub fn write(&self, buffer: &mut BytePacketBuffer) -> Result<()> {
         buffer.write_u16(self.id)?;
         self.control_flags.write(buffer)?;
