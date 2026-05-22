@@ -154,21 +154,91 @@ impl DnsRecord {
                 ref addr,
                 ttl } => {
                     buffer.write_qname(domain)?;
-                    buffer.write_u16(QueryType::A.to_num())?;
+                    buffer.write_u16(QueryType::ALIAS.to_num())?;
                     buffer.write_u16(1u16)?;
                     buffer.write_u32(ttl)?;
-                    buffer.write_u16(4u16)?;
+                    buffer.write_u16(addr.octets().len() as u16)?;
 
                     let octets = addr.octets();
                     for i in 0..octets.len() {
                         buffer.write_u8(octets[i])?;
+                    }
+                },
+            DnsRecord::NAMESERVER {
+                ref domain,
+                ref host,
+                ttl } => {
+                    buffer.write_qname(domain)?;
+                    buffer.write_u16(QueryType::NAMESERVER.to_num())?;
+                    buffer.write_u16(1u16)?;
+                    buffer.write_u32(ttl)?;
+
+                    Self::write_host(host, -1i32, buffer)?;
+                },
+            DnsRecord::CANONICALNAME {
+                ref domain,
+                ref host,
+                ttl } => {
+                    buffer.write_qname(domain)?;
+                    buffer.write_u16(QueryType::CANONICALNAME.to_num())?;
+                    buffer.write_u16(1u16)?;
+                    buffer.write_u32(ttl)?;
+
+                    Self::write_host(host, -1i32, buffer)?;
+                },
+            DnsRecord::MAILEXCHANGE {
+                ref domain,
+                priority,
+                ref host,
+                ttl } => {
+                    buffer.write_qname(domain)?;
+                    buffer.write_u16(QueryType::MAILEXCHANGE.to_num())?;
+                    buffer.write_u16(1u16)?;
+                    buffer.write_u32(ttl)?;
+
+                    Self::write_host(host, priority as i32, buffer)?;
+                },
+            DnsRecord::AAAA {
+                ref domain,
+                ref addr,
+                ttl } => {
+                    buffer.write_qname(domain)?;
+                    buffer.write_u16(QueryType::AAAA.to_num())?;
+                    buffer.write_u16(1u16)?;
+                    buffer.write_u32(ttl)?;
+                    buffer.write_u16(addr.octets().len() as u16)?;
+
+                    let octets = addr.octets();
+                    for i in 0..octets.len() {
+                        buffer.write_u8(octets[i])?;
+                    }
+                },
+            DnsRecord::UNKNOWN { .. } => {
+                println!("Skipping record: {:?}", self);
             }
         }
-    }
-}
 
 
         Ok(buffer.pos() - start_pos)
+    }
+
+    /// Helper function to eliminate duplicated code in host string writing.
+    /// (priority is represented as i32 to allow safe conversion (with guard) from/to u16;
+    /// negative priority - don't write it).
+    fn write_host(host: &String, priority: i32, buffer: &mut BytePacketBuffer) -> Result<()> {
+        let pos = buffer.pos();
+        buffer.write_u16(0u16)?;
+
+        if priority > 0 {
+            buffer.write_u16(priority as u16)?;
+
+        }
+        buffer.write_qname(host)?;
+
+        let size = buffer.pos() - (pos + 2);
+        buffer.set_u16(pos, size as u16)?;
+
+        Ok(())
     }
 }
 
