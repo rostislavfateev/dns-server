@@ -63,7 +63,7 @@ impl BytePacketBuffer {
 
     /// Get a range of Bytes from a provided start position (with check), the buffer current
     /// parsing position is unchanged.
-    fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
+    pub fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
         if start + len >= DNS_PACKET_SIZE {
             return Err("Buffer overflow detected!".into());
         }

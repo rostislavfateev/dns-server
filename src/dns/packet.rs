@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 /// Implementation of DNS Packet and support entities.
 
 //
@@ -86,5 +88,49 @@ impl DnsPacket {
         }
 
         Ok(())
+    }
+
+    /// 
+    pub fn get_random_alias(&self) -> Option<Ipv4Addr> {
+        self.answers
+            .iter()
+            .filter_map(|record| match record {
+                DnsRecord::ALIAS { addr, .. } => Some(*addr),
+                _ => None,
+            })
+            .next()
+    }
+
+    fn get_nameserver<'a>(&'a self, qname: &'a str) -> impl Iterator<Item = (&'a str, &'a str)> {
+        self.authorities
+            .iter()
+            // trim records
+            .filter_map(|record| match record {
+                DnsRecord::NAMESERVER { domain, host, .. } => Some((domain.as_str(), host.as_str())),
+                _ => None,
+            })
+            // get only authoritative entries
+            .filter(move |(domain, _)| qname.ends_with(*domain))
+    }
+
+    pub fn get_resolved_nameserver(&self, qname: &str) -> Option<Ipv4Addr> {
+        self.get_nameserver(qname)
+            .flat_map(|(_, host)| {
+                self.resources
+                    .iter()
+                    // pick where domain matches NS record host currently in processing
+                    .filter_map(move |record| match record {
+                        DnsRecord::ALIAS { domain, addr, .. } if domain == host => Some(addr),
+                        _ => None,
+                    })
+            })
+            .map(|addr| *addr)
+            .next()
+    }
+
+    pub fn get_unresolved_nameserver<'a>(&'a self, qname: &'a str) -> Option<&'a str> {
+        self.get_nameserver(qname)
+            .map(|(_, host)| host)
+            .next()
     }
 }
