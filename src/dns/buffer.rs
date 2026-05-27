@@ -121,13 +121,14 @@ impl BytePacketBuffer {
     }
 
     /// Read domain name and increment current parsing position.
-    pub fn read_qname(&mut self, outstr: &mut String) -> Result<()> {
+    pub fn read_qname(&mut self) -> Result<String> {
         let mut pos = self.pos();
         // Track jumps ("compression" for domain names)
         let mut jumped = false;
         let max_jumps = 5u8;
         let mut jump_count = 0u8;
 
+        let mut result = String::new();
         let mut delim = "";
 
         loop {
@@ -162,9 +163,9 @@ impl BytePacketBuffer {
                 }
 
                 // Append ASCII bytes ".<DOMAIN_PART>"
-                outstr.push_str(delim);
+                result.push_str(delim);
                 let str_buffer = self.get_range(pos, len as usize)?;
-                outstr.push_str(&String::from_utf8_lossy(str_buffer).to_lowercase());
+                result.push_str(&String::from_utf8_lossy(str_buffer).to_lowercase());
 
                 delim = ".";
 
@@ -176,7 +177,7 @@ impl BytePacketBuffer {
             self.seek(pos)?;
         }
 
-        Ok(())
+        Ok(result)
     }
 
     /// Write a single Byte (with check) and increment current parsing position.

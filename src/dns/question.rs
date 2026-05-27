@@ -71,8 +71,7 @@ impl DnsQuestion {
 
     /// Read DNS question record from byte buffer.
     pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsQuestion> {
-        let mut name = String::new();
-        buffer.read_qname(&mut name)?;
+        let name = buffer.read_qname()?;
 
         let qtype = QueryType::from_num(buffer.read_u16()?);
 

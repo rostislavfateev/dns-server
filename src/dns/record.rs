@@ -59,8 +59,7 @@ pub enum DnsRecord {
 impl DnsRecord {
     /// Read DNS record from byte buffer.
     pub fn read(buffer: &mut BytePacketBuffer) -> Result<DnsRecord> {
-        let mut domain = String::new();
-        buffer.read_qname(&mut domain)?;
+        let domain = buffer.read_qname()?;
         
         let qtype_num = buffer.read_u16()?;
         let qtype = QueryType::from_num(qtype_num);
@@ -85,33 +84,26 @@ impl DnsRecord {
                 })
             },
             QueryType::NAMESERVER => {
-                let mut host = String::new();
-                buffer.read_qname(&mut host)?;
-
                 Ok(DnsRecord::NAMESERVER {
                     domain: domain,
-                    host:   host,
+                    host:   buffer.read_qname()?,
                     ttl:    ttl })
             },
             QueryType::CANONICALNAME => {
-                let mut host = String::new();
-                buffer.read_qname(&mut host)?;
-
                 Ok(DnsRecord::CANONICALNAME {
                     domain: domain,
-                    host:   host,
+                    host:   buffer.read_qname()?,
                     ttl:    ttl
                 })
             },
             QueryType::MAILEXCHANGE => {
+                // @todo maybe there is an order for parameter initialization
                 let priority = buffer.read_u16()?;
-                let mut host = String::new();
-                buffer.read_qname(&mut host)?;
 
                 Ok(DnsRecord::MAILEXCHANGE {
                     domain:     domain,
                     priority:   priority,
-                    host:       host,
+                    host:       buffer.read_qname()?,
                     ttl:        ttl
                 })
             },
