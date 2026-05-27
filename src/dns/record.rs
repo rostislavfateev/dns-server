@@ -172,7 +172,7 @@ impl DnsRecord {
                     buffer.write_u16(1u16)?;
                     buffer.write_u32(ttl)?;
 
-                    Self::write_host(host, -1i32, buffer)?;
+                    Self::write_host(host, None, buffer)?;
                 },
             DnsRecord::CANONICALNAME {
                 ref domain,
@@ -183,7 +183,7 @@ impl DnsRecord {
                     buffer.write_u16(1u16)?;
                     buffer.write_u32(ttl)?;
 
-                    Self::write_host(host, -1i32, buffer)?;
+                    Self::write_host(host, None, buffer)?;
                 },
             DnsRecord::MAILEXCHANGE {
                 ref domain,
@@ -195,7 +195,7 @@ impl DnsRecord {
                     buffer.write_u16(1u16)?;
                     buffer.write_u32(ttl)?;
 
-                    Self::write_host(host, priority as i32, buffer)?;
+                    Self::write_host(host, Some(priority), buffer)?;
                 },
             DnsRecord::AAAA {
                 ref domain,
@@ -224,14 +224,14 @@ impl DnsRecord {
     /// Helper function to eliminate duplicated code in host string writing.
     /// (priority is represented as i32 to allow safe conversion (with guard) from/to u16;
     /// negative priority - don't write it).
-    fn write_host(host: &String, priority: i32, buffer: &mut BytePacketBuffer) -> Result<()> {
+    fn write_host(host: &str, priority: Option<u16>, buffer: &mut BytePacketBuffer) -> Result<()> {
         let pos = buffer.pos();
         buffer.write_u16(0u16)?;
 
-        if priority > 0 {
-            buffer.write_u16(priority as u16)?;
-
+        if let Some(value) = priority {
+            buffer.write_u16(value);
         }
+
         buffer.write_qname(host)?;
 
         let size = buffer.pos() - (pos + 2);
