@@ -2,10 +2,8 @@ use std::net::{Ipv4Addr, UdpSocket};
 use rand;
 
 use crate::dns::{
-    buffer::{
-        BytePacketBuffer,
-        Result
-    },
+    buffer::BytePacketBuffer,
+    error::Result,
     header::ResultCode,
     packet::DnsPacket, 
     question::{

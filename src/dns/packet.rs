@@ -4,10 +4,8 @@ use std::net::Ipv4Addr;
 
 //
 use crate::dns::{
-    buffer::{
-        BytePacketBuffer,
-        Result
-    },
+    buffer::BytePacketBuffer,
+    error::Result,
     header::DnsHeader,
     question::DnsQuestion,
     record::DnsRecord

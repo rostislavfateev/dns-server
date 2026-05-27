@@ -1,9 +1,9 @@
 /// Implementation of DNS header struct and support entities.
 
 // includes
-use crate::dns::buffer::{
-    BytePacketBuffer,
-    Result
+use crate::dns::{
+    buffer::BytePacketBuffer,
+    error::Result
 };
 
 

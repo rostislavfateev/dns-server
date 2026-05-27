@@ -2,10 +2,10 @@
 
 // includes
 use crate::dns::constants::DNS_PACKET_SIZE;
-
-
-/// "Custom exception" for DNS Packet Buffer parsing.
-pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+use crate::dns::error::{
+    DnsError,
+    Result
+};
 
 
 /// DNS Packet buffer implementation.
@@ -33,7 +33,7 @@ impl BytePacketBuffer {
     /// Change (with check) buffer current parsing position to provided value.
     fn seek(&mut self, pos: usize) -> Result<()> {
         if pos >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(pos));
         }
 
         self.pos = pos;
@@ -44,7 +44,7 @@ impl BytePacketBuffer {
     /// Step (with check) the buffer current parsing position forward a provided number of Bytes.
     pub fn step(&mut self, steps: usize) -> Result<()> {
         if self.pos + steps  >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(self.pos + steps));
         }
 
         self.pos += steps;
@@ -55,7 +55,7 @@ impl BytePacketBuffer {
     /// is unchanged.
     fn peek(&mut self, pos: usize) -> Result<u8> {
         if pos >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(pos));
         }
 
         Ok(self.buff[pos])
@@ -65,7 +65,7 @@ impl BytePacketBuffer {
     /// parsing position is unchanged.
     pub fn get_range(&mut self, start: usize, len: usize) -> Result<&[u8]> {
         if start + len >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(start + len));
         }
 
         Ok(&self.buff[start..start + len as usize])
@@ -74,7 +74,7 @@ impl BytePacketBuffer {
     /// Sets buffer value at specified position (with check).
     pub fn set(&mut self, pos: usize, val: u8) -> Result<()> {
         if pos >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(pos));
         }
 
         self.buff[pos] = val;
@@ -93,7 +93,7 @@ impl BytePacketBuffer {
     /// Read a single Byte (with check) and increment current parsing position.
     pub fn read_u8(&mut self) -> Result<u8> {
         if self.pos >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(self.pos));
         }
 
         let result = self.buff[self.pos];
@@ -132,7 +132,7 @@ impl BytePacketBuffer {
 
         loop {
             if jump_count > max_jumps {
-                return Err("Maximum number of jumps exceeded!".into());
+                return Err(DnsError::TooManyJumps);
             }
 
             let len = self.peek(pos)?;
@@ -182,7 +182,7 @@ impl BytePacketBuffer {
     /// Write a single Byte (with check) and increment current parsing position.
     pub fn write_u8(&mut self, val: u8) -> Result<()> {
         if self.pos >= DNS_PACKET_SIZE {
-            return Err("Buffer overflow detected!".into());
+            return Err(DnsError::BufferOverflow(self.pos));
         }
 
         self.buff[self.pos] = val;
@@ -214,7 +214,7 @@ impl BytePacketBuffer {
         for label in qname.split('.') {
             if label.len() > 0x3F {
                 // @todo different exception - label length exceeded.
-                return Err("Maximum label length exceeded!".into()); 
+                return Err(DnsError::LabelTooLarge(label.len())); 
             }
 
             self.write_u8(label.len() as u8)?;

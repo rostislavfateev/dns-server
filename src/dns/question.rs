@@ -1,9 +1,9 @@
 /// Implementation of DNS Question record and support entities.
 
 // includes
-use crate::dns::buffer::{
-    BytePacketBuffer,
-    Result
+use crate::dns::{
+    buffer::BytePacketBuffer,
+    error::Result
 };
 
 

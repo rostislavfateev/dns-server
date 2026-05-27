@@ -1,4 +1,5 @@
 
+pub mod error;
 pub mod constants;
 pub mod buffer;
 pub mod header;

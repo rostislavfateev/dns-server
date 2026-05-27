@@ -7,10 +7,8 @@ use std::net::{
 };
 //
 use crate::dns::{
-    buffer::{
-        BytePacketBuffer,
-        Result
-    },
+    buffer::BytePacketBuffer,
+    error::Result,
     question::QueryType
 };
 
