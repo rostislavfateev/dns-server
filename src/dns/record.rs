@@ -69,17 +69,9 @@ impl DnsRecord {
 
         match qtype {
             QueryType::ALIAS => {
-                let ip_u32 = buffer.read_u32()?;
-                let addr = Ipv4Addr::new(
-                    ((ip_u32 >> 24) & 0xFF) as u8,
-                    ((ip_u32 >> 16) & 0xFF) as u8,
-                    ((ip_u32 >> 8)  & 0xFF) as u8,
-                    (ip_u32         & 0xFF) as u8,
-                );
-
                 Ok(DnsRecord::ALIAS {
                     domain: domain,
-                    addr:   addr,
+                    addr:   Ipv4Addr::from(buffer.read_u32()?),
                     ttl:    ttl,
                 })
             },
@@ -108,25 +100,14 @@ impl DnsRecord {
                 })
             },
             QueryType::AAAA => {
-                let mut raw_addr = [0u32; 4];
+                let mut raw_addr = [0u16; 8];
                 for rw in raw_addr.iter_mut() {
-                    *rw = buffer.read_u32()?;
+                    *rw = buffer.read_u16()?;
                 }
-
-                let addr = Ipv6Addr::new(
-                    ((raw_addr[0] >> 16) & 0xFFFF) as u16,
-                    (raw_addr[0]         & 0xFFFF) as u16,
-                    ((raw_addr[1] >> 16) & 0xFFFF) as u16,
-                    (raw_addr[1]         & 0xFFFF) as u16,
-                    ((raw_addr[2] >> 16) & 0xFFFF) as u16,
-                    (raw_addr[2]         & 0xFFFF) as u16,
-                    ((raw_addr[3] >> 16) & 0xFFFF) as u16,
-                    (raw_addr[3]         & 0xFFFF) as u16,
-                );
 
                 Ok(DnsRecord::AAAA {
                     domain: domain,
-                    addr:   addr,
+                    addr:   Ipv6Addr::from(raw_addr),
                     ttl:    ttl
                 })
             },
@@ -158,9 +139,8 @@ impl DnsRecord {
                     buffer.write_u32(ttl)?;
                     buffer.write_u16(addr.octets().len() as u16)?;
 
-                    let octets = addr.octets();
-                    for i in 0..octets.len() {
-                        buffer.write_u8(octets[i])?;
+                    for octet in addr.octets() {
+                        buffer.write_u8(octet)?;
                     }
                 },
             DnsRecord::NAMESERVER {
@@ -207,9 +187,8 @@ impl DnsRecord {
                     buffer.write_u32(ttl)?;
                     buffer.write_u16(addr.octets().len() as u16)?;
 
-                    let octets = addr.octets();
-                    for i in 0..octets.len() {
-                        buffer.write_u8(octets[i])?;
+                    for octet in addr.octets() {
+                        buffer.write_u8(octet)?;
                     }
                 },
             DnsRecord::UNKNOWN { .. } => {
@@ -229,7 +208,7 @@ impl DnsRecord {
         buffer.write_u16(0u16)?;
 
         if let Some(value) = priority {
-            buffer.write_u16(value);
+            buffer.write_u16(value)?;
         }
 
         buffer.write_qname(host)?;
