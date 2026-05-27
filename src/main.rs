@@ -1,4 +1,5 @@
 use std::net::{Ipv4Addr, UdpSocket};
+use rand;
 
 use crate::dns::{
     buffer::{
@@ -75,7 +76,7 @@ fn lookup(qname: &str, qtype: QueryType, server: (Ipv4Addr, u16)) -> Result<DnsP
     let socket = UdpSocket::bind(("0.0.0.0", 0))?;
     let mut packet = DnsPacket::new();
 
-    packet.header.id = 6666;
+    packet.header.id = rand::random::<u16>();
     packet.header.question_count = 1;
     packet.header.control_flags.recursion_desired = true;
     packet.questions.push(DnsQuestion {
