@@ -72,7 +72,7 @@ fn handle_query(socket: &UdpSocket) -> Result<()> {
 
 
 fn lookup(qname: &str, qtype: QueryType, server: (Ipv4Addr, u16)) -> Result<DnsPacket> {
-    let socket = UdpSocket::bind(("0.0.0.0", 43210))?;
+    let socket = UdpSocket::bind(("0.0.0.0", 0))?;
     let mut packet = DnsPacket::new();
 
     packet.header.id = 6666;
