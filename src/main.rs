@@ -1,4 +1,9 @@
-use std::net::{Ipv4Addr, UdpSocket};
+use std::{
+    net::{
+        Ipv4Addr,
+        UdpSocket},
+    time::Duration,
+};
 use rand;
 
 use crate::dns::{
@@ -72,6 +77,7 @@ fn handle_query(socket: &UdpSocket) -> Result<()> {
 
 fn lookup(qname: &str, qtype: QueryType, server: (Ipv4Addr, u16)) -> Result<DnsPacket> {
     let socket = UdpSocket::bind(("0.0.0.0", 0))?;
+    socket.set_read_timeout(Some(Duration::from_secs(3)))?;
     let mut packet = DnsPacket::new();
 
     packet.header.id = rand::random::<u16>();
