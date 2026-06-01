@@ -91,19 +91,19 @@ impl DnsControlFlags {
 
         // bit:       0                  1                     2                 3 4 5 6            7
         //   [recursion_desired | truncated_message | authoritative_answer | operation_code | query_response]
-        self.recursion_desired      = (flag_byte1 & 1) > 0;
-        self.truncated_message      = (flag_byte1 & (1 << 1)) > 0;
-        self.authoritative_answer   = (flag_byte1 & (1 << 2)) > 0;
-        self.operation_code         = (flag_byte1 >> 3) & 0x0F;
-        self.query_response         = (flag_byte1 & (1 << 7)) > 0;
+        self.recursion_desired      = (flag_byte1 & (1 << DnsControlFlags::FLAG_RD)) > 0;
+        self.truncated_message      = (flag_byte1 & (1 << DnsControlFlags::FLAG_TM)) > 0;
+        self.authoritative_answer   = (flag_byte1 & (1 << DnsControlFlags::FLAG_AA)) > 0;
+        self.operation_code         = (flag_byte1 >> DnsControlFlags::FLAG_OPCODE) & 0x0F;
+        self.query_response         = (flag_byte1 & (1 << DnsControlFlags::FLAG_QR)) > 0;
 
         // bit: 0 1 2 3          4                  5            6           7
         //   [result_code | check_disable | authoritative_data | z | recursion_available]
         self.result_code            = ResultCode::from_num(flag_byte2 & 0x0F);
-        self.check_disable          = (flag_byte2 & (1 << 4)) > 0;
-        self.authoritative_data     = (flag_byte2 & (1 << 5)) > 0;
-        //self.z                    = (flag_byte2 & (1 << 6)) > 0;
-        self.recursion_available    = (flag_byte2 & (1 << 7)) > 0;
+        self.check_disable          = (flag_byte2 & (1 << DnsControlFlags::FLAG_CD)) > 0;
+        self.authoritative_data     = (flag_byte2 & (1 << DnsControlFlags::FLAG_AD)) > 0;
+        //self.z                    = (flag_byte2 & (1 << DnsControlFlags::FLAG_Z)) > 0;
+        self.recursion_available    = (flag_byte2 & (1 << DnsControlFlags::FLAG_RA)) > 0;
 
         Ok(())
     }
@@ -128,6 +128,24 @@ impl DnsControlFlags {
 
         Ok(())
     }
+
+    /// Accessor of "recursion_desired" flag.
+    pub const FLAG_RD: u8 = 0u8;
+    /// Accessor of "truncated_message" flag.
+    pub const FLAG_TM: u8 = 1u8;
+    /// Accessor of "authoritative_answer" flag.
+    pub const FLAG_AA: u8 = 2u8;
+    /// Accessor of "operation_code" flag.
+    pub const FLAG_OPCODE: u8 = 3u8;
+    /// Accessor of "query_response" flag.
+    pub const FLAG_QR: u8 = 7u8;
+    /// Accessor of "check_disable" flag.
+    pub const FLAG_CD: u8 = 4u8;
+    /// Accessor of "authoritative_data" flag.
+    pub const FLAG_AD: u8 = 5u8;
+    //pub const FLAG_Z: u8 = 6u8;
+    /// Accessor of "recursion_available" flag.
+    pub const FLAG_RA: u8 = 7u8;
 }
 
 
