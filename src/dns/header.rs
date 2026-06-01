@@ -3,37 +3,38 @@
 // includes
 use crate::dns::{
     buffer::BytePacketBuffer,
-    error::Result
+    error::Result,
 };
 
 
 /// DNS Request Result Code.
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u8)]
+#[derive(Clone, Debug, Copy, PartialEq, Eq)]
 pub enum ResultCode {
     /// No error detected.
-    NoErr = 0,
+    NoErr       = 0,
     /// Format error.
-    FormErr,
+    FormErr     = 1,
     /// Server failure.
-    ServFail,
+    ServFail    = 2,
     ///
-    NxDomain,
+    NxDomain    = 3,
     /// Not implemented error.
-    NotImp,
+    NotImp      = 4,
     /// Request refused error.
-    Refused,
+    Refused     = 5,
 }
 
-impl ResultCode {
+impl From<u8> for ResultCode {
     /// Number to ResultCode converter.
-    pub fn from_num(num: u8) -> ResultCode {
+    fn from(num: u8) -> ResultCode {
         match num {
-            1 => ResultCode::FormErr,
-            2 => ResultCode::ServFail,
-            3 => ResultCode::NxDomain,
-            4 => ResultCode::NotImp,
-            5 => ResultCode::Refused,
-            0 | _ => ResultCode::NoErr,
+            1       => ResultCode::FormErr,
+            2       => ResultCode::ServFail,
+            3       => ResultCode::NxDomain,
+            4       => ResultCode::NotImp,
+            5       => ResultCode::Refused,
+            0 | _   => ResultCode::NoErr,
         }
     }
 }
@@ -99,7 +100,7 @@ impl DnsControlFlags {
 
         // bit: 0 1 2 3          4                  5            6           7
         //   [result_code | check_disable | authoritative_data | z | recursion_available]
-        self.result_code            = ResultCode::from_num(flag_byte2 & 0x0F);
+        self.result_code            = ResultCode::from(flag_byte2 & 0x0F);
         self.check_disable          = (flag_byte2 & (1 << DnsControlFlags::FLAG_CD)) > 0;
         self.authoritative_data     = (flag_byte2 & (1 << DnsControlFlags::FLAG_AD)) > 0;
         //self.z                    = (flag_byte2 & (1 << DnsControlFlags::FLAG_Z)) > 0;

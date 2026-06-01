@@ -1,4 +1,6 @@
-
+/// Errors associated with DNS Server.
+ 
+/// DNS Error enumeration.
 #[derive(Debug, thiserror::Error)]
 pub enum DnsError {
     #[error("Buffer overflow at position {0}")]
